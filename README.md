@@ -19,15 +19,15 @@ Users can:
 
 ![popup]
 
-JavaScript and jQuery are used to build the front end and manipulate the DOM. Chrome Storage saves data which is then accessed through the API. FileSaver.js allows the content to download. Downloading the file clears the extension's data in storage.
+JavaScript is used to build the front end and manipulate the DOM. Chrome Storage saves data which is then accessed through the API. Downloading the file clears the extension's data in storage.
 
 ## V 0.0.0.2
 !!! To Dos !!!
-* replace jQuery with JS: jQuery is making this really hefty
-* add PDF capabilities: PDF text books are all the rage
+* [x] replace jQuery with JS
+* [ ] add PDF capabilities: PDF text books are all the rage
 
 
 [bulletter]: https://chrome.google.com/webstore/detail/bulletter/aofpcjgkejmkjjcklmooaidilaodfjlp
-[wiki]: ./docs/wiki.png
-[wiki-doc]: ./docs/wiki-doc.png
-[popup]: ./docs/popup.png
+[wiki]: ./store-images/wiki.png
+[wiki-doc]: ./store-images/wiki-doc.png
+[popup]: ./store-images/popup2.png
