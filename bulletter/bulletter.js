@@ -59,7 +59,7 @@ function formatAndSave(notes) {
   a.href = url;
   a.download = 'bulletter.doc';
   a.click();
-  window.URL.revokeObkectURL(url);
+  window.URL.revokeObjectURL(url);
 }
 
 function listenToColor() {
