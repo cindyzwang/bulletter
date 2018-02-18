@@ -13,13 +13,23 @@ Users can:
 * Choose between different colored highlighters
 * Text that is hightlighted the same color will be grouped together under the same heading
 * The user can add more colors
-* Export the highlighted text as a `.doc` with all highlighted text converted to bullet points
+* Export the highlighted text as a `.doc` with all highlighted text converted to bullet points and headings
 
 ## Structure
 
 ![popup]
 
 JavaScript is used to build the front end and manipulate the DOM. Chrome Storage saves data which is then accessed through the API. Downloading the file clears the extension's data in storage.
+
+This extension is implemented using the standard Chrome extension technology: Javascript, HTML, and CSS.  In addition to the `manifest.json` and `package.json` files, there are two scripts:
+
+- `highlight.js`: will contain the logic for adding colors and headings. This is the content script that interacts with the current webpage
+- `bulletter.js`: will contain the logic for extracting the highlighted text and grouping it into the correct heading
+
+Two HTML files:
+- `style.css`: the file containing the styling rules for recoloring
+- `options.html`: the file that renders the Colors menu for the user
+
 
 ## V 0.0.0.2
 !!! To Dos !!!
