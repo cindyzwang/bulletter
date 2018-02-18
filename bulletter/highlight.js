@@ -1,32 +1,31 @@
 let colorKey, note, notes;
-let element;
-const specificNode = document.createElement("span");
-specificNode.appendChild(document.createTextNode("TextForBulletterToReplace"));
-specificNode.id = "bulletter-replace";
-const specificText = '<span id="bulletter-replace">TextForBulletterToReplace</span>';
+
+const OPEN_TAG_REG = /^<([a-z]+) *[^\/]*?>$/;
+const CLOSE_TAG_REG = /^<\/[a-z]+ ?>$/;
 
 document.addEventListener('mouseup', (e) => {
-  chrome.storage.sync.get(['notes', 'note', 'colorKey'], (data) => {
+  chrome.storage.sync.get(['notes', 'note', 'colorKey'], data => {
     notes = data.notes;
 
     if (data.note && data.colorKey) {
       note = data.note;
       colorKey = data.colorKey;
 
-      element = document.elementFromPoint(e.clientX, e.clientY);
-      let range = getSelectionRange();
-      let pointText = range.text;
-      let pointHTML = range.html;
+      const range = getSelectionRange();
+      const { pointText, container } = range;
+      debugger
+      const oldPointHTML = splitByHTMLTags(range.html).join('');
+
+      // if something has been highlighted...
       if (pointText.length > 0 && (/\S/g).test(pointText)) {
         note.points.push(pointText);
 
-        let oldHTML = element.innerHTML;
-        let newPointHTML = makeNewHTML(pointHTML);
+        const oldContainerHTML = container.innerHTML;
+        const newPointHTML = makeNewHTML(oldPointHTML);
 
-        let newHTML = oldHTML.replace(specificText, newPointHTML);
+        const newHTML = oldContainerHTML.replace(oldPointHTML, newPointHTML);
 
-        newHTML.replace(/<span id="bulletter-replace">TextForBulletterToReplace<\/span>/g, '');
-        element.innerHTML = newHTML;
+        container.innerHTML = newHTML;
 
         notes[colorKey] = note;
         chrome.storage.sync.set({ note, notes });
@@ -36,66 +35,85 @@ document.addEventListener('mouseup', (e) => {
 }, false);
 
 function getSelectionRange() {
-  let range, text = '', html = '';
-  if (document.selection && document.selection.createRange) {
-    range = document.selection.createRange();
-    text = range.text;
-    html = range.htmlText;
-  } else if (window.getSelection) {
-    let selection = window.getSelection();
+  // returns the html as a string, the text highlighted, 
+  // and the lowest element on the dom tree that contains everything highlighted
+  let range, pointText = '', html = '';
+  let container;
+  const selection = window.getSelection();
 
-    if (selection.rangeCount > 0) {
-      range = selection.getRangeAt(0);
-      text = range.toString();
+  // make sure that something was actually highlighted
+  if (selection.rangeCount > 0) {
+    range = selection.getRangeAt(0);
+    pointText = range.toString();
 
-      let clonedSelection = range.cloneContents();
-      let div = document.createElement('div');
-      div.appendChild(clonedSelection);
-      html = div.innerHTML;
+    if (selection.anchorNode !== selection.focusNode) {
+      container = range.commonAncestorContainer;
+    } else {
+      container = range.commonAncestorContainer.parentElement;
+    }
+    
+    // turn the highlighted HTML into a string
+    // NOTE: range.cloneContents will include opening/closing tags
+    // so if you start/stop in the middle of an element, it will include
+    // the opening/closing tag at the start/end
+    const clonedSelection = range.cloneContents();
+    const div = document.createElement('div');
+    div.append(clonedSelection);
+    html = div.innerHTML;
+  }
 
-      if (text.length > 0 && (/\S/g).test(text)) {
-        range.deleteContents();
-        range.insertNode(specificNode);
-      }
+  // return the html as a string, and the text w/o the html tags
+  return { html, pointText, container };
+}
 
-      if (selection.anchorNode !== selection.focusNode) {
-        element = element.parentNode.parentNode;
-        html = html.replace(/^<[a-zA-Z]+(>|.*?[^?]>)/, '');        // replace beginning opening tag
-        html = html.replace(/< ?\/ ?[a-zA-Z]+(>|.*?[^?]>)$/, '');  // replace ending closing tag
-      }
+function splitByHTMLTags(htmlString) {
+  const splitHTMLString = htmlString.split(/(<\/?\w+(?:(?:\s+\w+(?:\s*=\s*(?:".*?"|'.*?'|[^'">\s]+))?)+\s*|\s*)\/?>)/gim)
+    .filter(el => el !== "");
+  
+  // if the first element is an opening tag or if the last element is a closing tag, strip it out
+  // bc range.cloneContents adds those opening/closing tags if you highlight partial html elements
+  let startIndex = 0;
+  let endIndex = splitHTMLString.length;
+  
+  for (const substr of splitHTMLString) {
+    if (OPEN_TAG_REG.test(substr)) {
+      startIndex++;
+    } else {
+      break;
     }
   }
-  return { html, text };
+
+  for (let i = endIndex - 1; i > startIndex; i--) {
+    if (CLOSE_TAG_REG.test(splitHTMLString[i])) {
+      endIndex--;
+    } else {
+      break;
+    }
+  }
+
+  return splitHTMLString.slice(startIndex, endIndex)
 }
 
 
-function makeNewHTML(point) {
+function makeNewHTML(htmlString) {
+  // adds my highlighting spans inside of html tags from the page
   let textColor = parseInt(colorKey, 16) < parseInt('CC0000', 16) ? 'white' : 'black';
   let style = `display: inline !important; background-color: #${colorKey} !important; color: ${textColor}`;
   const openSpan = `<span name='mine' style='${style}'>`;
   const closeSpan = '</span>';
   const openSpanReg = /<span name="mine" style="display: inline !important; background-color: #\w{6} !important; color: (black|white)">/;
 
-  let splitPoint = point.split(/(<\/?\w+(?:(?:\s+\w+(?:\s*=\s*(?:".*?"|'.*?'|[^'">\s]+))?)+\s*|\s*)\/?>)/gim)
-                    .filter(el => el !== "" );
+  let splitPoint = splitByHTMLTags(htmlString)
   let newPointHTML = "";
 
   if (splitPoint.length === 1) {
-    newPointHTML = `${openSpan}${point}${closeSpan}`;
+    newPointHTML = `${openSpan}${htmlString}${closeSpan}`;
   } else {
-    let openTagReg = /<([a-z]+) *[^\/]*?>/;
-    let closeTagReg = /^<\\/;
-
-    splitPoint.forEach( (el, idx) => {
-      if (openSpanReg.test(el)) {
-        newPointHTML += openSpan;
-      } else if (!openTagReg.test(el) && !closeTagReg.test(el) && !openSpanReg.test(splitPoint[idx - 1])) {
-        newPointHTML += `${openSpan}${el}${closeSpan}`;
+    splitPoint.forEach((el, idx) => {
+      if (!OPEN_TAG_REG.test(el) && !CLOSE_TAG_REG.test(el)) {
+        newPointHTML += `${openSpan}${el}${closeSpan}`
       } else {
         newPointHTML += el;
-        if (idx === splitPoint.length - 1 && openSpanReg.test(splitPoint[idx - 1])) {
-          newPointHTML += closeSpan;
-        }
       }
     });
   }
