@@ -1,7 +1,7 @@
-let notes = {}, headings;                         // all note objects, all heading elements. persistent
+let notes = {}, headings;                         // all note objects, all heading elements as a string. persistent
 let colorCode = '#FFFF00', colorKey = 'FFFF00';   // current color default yellow
 let note;                                         // current note
-let button, heading;                              // html elements
+let heading;                                      // current note's html element
 
 class Note {
   constructor(heading) {
@@ -14,9 +14,11 @@ class Note {
   }
 }
 
+
 function uniqueColor(newColor, colors) {
   return !colors.includes(newColor);
 }
+
 
 function downloadAndClear(notes) {
   return e => {
@@ -25,17 +27,20 @@ function downloadAndClear(notes) {
   };
 }
 
+
 function formatAndSave(notes) {
   let content = "";
-  Object.values(notes).forEach(note => {
+  const headingsEl = document.getElementById('headings')
+  const colorKeys = Array.prototype.map.call(headingsEl.childNodes, el => el.className);
+  colorKeys.forEach(key => {
+    const note = notes[key];
     content += `<p>${note.heading}</p>`;
     content += `<ul>`;
     note.points.forEach(point => {
       content += `<li>${point}</li>`;
     });
     content += '</ul>';
-  });
-  content += '</ul>';
+  })
 
   let htmlDocument = '<html xmlns:office="urn:schemas-microsoft-com:office:office xmlns:word="urn:schemas-microsoft-com:office:word" xmlns="http://www.w3.org/TR/REC-html40">' +
     '<body>' +
@@ -51,7 +56,6 @@ function formatAndSave(notes) {
   }
 
   let blob = new Blob([byteNumbers], {type: 'text/html'});
-  // saveAs(blob, 'bulletter.doc');
   const a = document.createElement("a");
   document.body.appendChild(a);
   a.style = "display: none";
@@ -62,7 +66,10 @@ function formatAndSave(notes) {
   window.URL.revokeObjectURL(url);
 }
 
+
 function listenToColor() {
+  // puts an event listener on each hexagon so that when clicked,
+  // the color preview square matches
   const areas = document.getElementsByTagName('area');
   Array.prototype.forEach.call(areas, area => {
     area.addEventListener('click', () => {
@@ -73,6 +80,7 @@ function listenToColor() {
     }, false);
   });
 }
+
 
 function createNote(e) {
   if (e.keyCode === 13 && heading.value !== '') {
@@ -101,6 +109,7 @@ function createNote(e) {
   }
 }
 
+
 function selectNote(e) {
   if (e.heading) {                     // if a note was just made, make it the current note
     note = e;
@@ -128,6 +137,7 @@ function selectNote(e) {
   }
 }
 
+
 function relist(oldHeadings) {
   document.getElementById('headings').innerHTML += oldHeadings;
   let lis = document.getElementsByTagName('li');
@@ -135,6 +145,7 @@ function relist(oldHeadings) {
     li.addEventListener('click', selectNote);
   });
 }
+
 
 document.addEventListener('DOMContentLoaded', function() {
   chrome.storage.sync.get(['headings', 'notes', 'note'], function(data) {
@@ -150,7 +161,7 @@ document.addEventListener('DOMContentLoaded', function() {
     heading.addEventListener('keydown', createNote);
     document.getElementById('color-preview').style.backgroundColor = colorCode;
 
-    button = document.getElementById('download-button');
+    const button = document.getElementById('download-button');
     button.addEventListener('click', downloadAndClear(notes));
   });
 });
