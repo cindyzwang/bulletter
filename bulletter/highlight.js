@@ -3,6 +3,7 @@ let colorKey, note, notes;
 const OPEN_TAG_REG = /^<([a-z]+) *[^\/]*?>$/;
 const CLOSE_TAG_REG = /^<\/[a-z]+ ?>$/;
 
+
 document.addEventListener('mouseup', (e) => {
   chrome.storage.sync.get(['notes', 'note', 'colorKey'], data => {
     notes = data.notes;
@@ -13,7 +14,6 @@ document.addEventListener('mouseup', (e) => {
 
       const range = getSelectionRange();
       const { pointText, container } = range;
-      debugger
       const oldPointHTML = splitByHTMLTags(range.html).join('');
 
       // if something has been highlighted...
@@ -33,6 +33,7 @@ document.addEventListener('mouseup', (e) => {
     }
   });
 }, false);
+
 
 function getSelectionRange() {
   // returns the html as a string, the text highlighted, 
@@ -62,9 +63,9 @@ function getSelectionRange() {
     html = div.innerHTML;
   }
 
-  // return the html as a string, and the text w/o the html tags
   return { html, pointText, container };
 }
+
 
 function splitByHTMLTags(htmlString) {
   const splitHTMLString = htmlString.split(/(<\/?\w+(?:(?:\s+\w+(?:\s*=\s*(?:".*?"|'.*?'|[^'">\s]+))?)+\s*|\s*)\/?>)/gim)
@@ -97,11 +98,10 @@ function splitByHTMLTags(htmlString) {
 
 function makeNewHTML(htmlString) {
   // adds my highlighting spans inside of html tags from the page
-  let textColor = parseInt(colorKey, 16) < parseInt('CC0000', 16) ? 'white' : 'black';
-  let style = `display: inline !important; background-color: #${colorKey} !important; color: ${textColor}`;
+  const textColor = parseInt(colorKey, 16) < parseInt('CC0000', 16) ? 'white' : 'black';
+  const style = `display: inline !important; background-color: #${colorKey} !important; color: ${textColor}`;
   const openSpan = `<span name='mine' style='${style}'>`;
   const closeSpan = '</span>';
-  const openSpanReg = /<span name="mine" style="display: inline !important; background-color: #\w{6} !important; color: (black|white)">/;
 
   let splitPoint = splitByHTMLTags(htmlString)
   let newPointHTML = "";
